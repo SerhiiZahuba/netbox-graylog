@@ -1,4 +1,4 @@
-"""Dashboard widgets for the NetBox Graylog plugin."""
+"""Dashboard widgets for the NetBox Loki plugin."""
 
 import logging
 
@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 @register_widget
 class GraylogSummaryWidget(DashboardWidget):
-    """Dashboard widget showing log volume and error counts from Graylog."""
+    """Dashboard widget showing log volume and error counts from Loki."""
 
-    default_title = _("Graylog Summary")
-    description = _("Display log volume and error counts from Graylog.")
+    default_title = _("Loki Summary")
+    description = _("Display log volume and error counts from Loki.")
     template_name = "netbox_graylog/widgets/graylog_summary.html"
     width = 4
     height = 3
@@ -51,7 +51,7 @@ class GraylogSummaryWidget(DashboardWidget):
         if not client:
             return render_to_string(
                 self.template_name,
-                {"error": "Graylog not configured. Set graylog_url and graylog_api_token in plugin settings."},
+                {"error": "Loki is not configured. Set loki_url in the plugin settings."},
             )
 
         time_range = int(self.config.get("time_range", 3600))
@@ -77,6 +77,6 @@ class GraylogSummaryWidget(DashboardWidget):
                 "warnings": summary.get("warnings", 0),
                 "time_label": time_label,
                 "cached": summary.get("cached", False),
-                "graylog_url": client.config.get("graylog_external_url") or client.base_url,
+                "external_log_url": client.config.get("loki_external_url") or client.base_url,
             },
         )

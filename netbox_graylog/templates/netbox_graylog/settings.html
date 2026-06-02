@@ -1,11 +1,11 @@
 {% extends 'base/layout.html' %}
 {% load form_helpers %}
 
-{% block title %}Graylog Settings{% endblock %}
+{% block title %}Loki Settings{% endblock %}
 
 {% block header %}
 <div class="d-flex justify-content-between align-items-center">
-    <h1>Graylog Plugin Settings</h1>
+    <h1>Loki Plugin Settings</h1>
 </div>
 {% endblock header %}
 
@@ -15,14 +15,14 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="mdi mdi-cog"></i> Graylog Configuration
+                    <i class="mdi mdi-cog"></i> Loki Configuration
                 </h5>
             </div>
             <div class="card-body">
                 <div class="alert alert-info">
                     <i class="mdi mdi-information"></i>
-                    <strong>Note:</strong> Settings are configured in NetBox's <code>configuration.py</code> file.
-                    This page shows current settings and allows testing the connection.
+                    <strong>Note:</strong> Settings are configured in NetBox's <code>configuration.py</code> or <code>plugins.py</code>.
+                    This page shows the active settings shape and lets you test the current connection.
                 </div>
 
                 <form method="post">
@@ -31,19 +31,63 @@
                     <h6 class="text-muted mb-3">Connection Settings</h6>
 
                     <div class="mb-3">
-                        <label class="form-label">{{ form.graylog_url.label }}</label>
-                        {{ form.graylog_url }}
-                        <small class="text-muted">{{ form.graylog_url.help_text }}</small>
+                        <label class="form-label">{{ form.loki_url.label }}</label>
+                        {{ form.loki_url }}
+                        <small class="text-muted">{{ form.loki_url.help_text }}</small>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">{{ form.graylog_api_token.label }}</label>
-                        {{ form.graylog_api_token }}
-                        <small class="text-muted">{{ form.graylog_api_token.help_text }}</small>
+                        <label class="form-label">{{ form.loki_external_url.label }}</label>
+                        {{ form.loki_external_url }}
+                        <small class="text-muted">{{ form.loki_external_url.help_text }}</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.loki_tenant.label }}</label>
+                        {{ form.loki_tenant }}
+                        <small class="text-muted">{{ form.loki_tenant.help_text }}</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.loki_username.label }}</label>
+                            {{ form.loki_username }}
+                            <small class="text-muted">{{ form.loki_username.help_text }}</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.loki_password.label }}</label>
+                            {{ form.loki_password }}
+                            <small class="text-muted">{{ form.loki_password.help_text }}</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.loki_bearer_token.label }}</label>
+                        {{ form.loki_bearer_token }}
+                        <small class="text-muted">{{ form.loki_bearer_token.help_text }}</small>
                     </div>
 
                     <hr>
                     <h6 class="text-muted mb-3">Query Settings</h6>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.loki_job.label }}</label>
+                            {{ form.loki_job }}
+                            <small class="text-muted">{{ form.loki_job.help_text }}</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ form.device_label.label }}</label>
+                            {{ form.device_label }}
+                            <small class="text-muted">{{ form.device_label.help_text }}</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.stream_selector.label }}</label>
+                        {{ form.stream_selector }}
+                        <small class="text-muted">{{ form.stream_selector.help_text }}</small>
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -72,18 +116,18 @@
                     </div>
 
                     <hr>
-                    <h6 class="text-muted mb-3">Search Options</h6>
+                    <h6 class="text-muted mb-3">Matching Options</h6>
 
-                    <div class="mb-3">
-                        <label class="form-label">{{ form.search_field.label }}</label>
-                        {{ form.search_field }}
-                        <small class="text-muted">{{ form.search_field.help_text }}</small>
+                    <div class="form-check mb-2">
+                        {{ form.verify_tls }}
+                        <label class="form-check-label">{{ form.verify_tls.label }}</label>
+                        <br><small class="text-muted">{{ form.verify_tls.help_text }}</small>
                     </div>
 
                     <div class="form-check mb-2">
-                        {{ form.use_fqdn }}
-                        <label class="form-check-label">{{ form.use_fqdn.label }}</label>
-                        <br><small class="text-muted">{{ form.use_fqdn.help_text }}</small>
+                        {{ form.use_regex_matching }}
+                        <label class="form-check-label">{{ form.use_regex_matching.label }}</label>
+                        <br><small class="text-muted">{{ form.use_regex_matching.help_text }}</small>
                     </div>
 
                     <div class="form-check mb-3">
@@ -91,7 +135,6 @@
                         <label class="form-check-label">{{ form.fallback_to_ip.label }}</label>
                         <br><small class="text-muted">{{ form.fallback_to_ip.help_text }}</small>
                     </div>
-
                 </form>
             </div>
         </div>
@@ -105,7 +148,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <p class="text-muted">Test connectivity to the Graylog API using current settings.</p>
+                <p class="text-muted">Test connectivity to the Loki API using the active NetBox configuration.</p>
                 <button type="button" class="btn btn-primary" id="test-connection">
                     <i class="mdi mdi-play"></i> Test Connection
                 </button>
@@ -121,17 +164,22 @@
                 </h5>
             </div>
             <div class="card-body">
-                <p>Add to <code>configuration.py</code>:</p>
+                <p>Add to <code>configuration.py</code> or <code>plugins.py</code>:</p>
                 <pre class="bg-body-secondary p-2 rounded" style="font-size: 0.8rem;"><code>PLUGINS = ['netbox_graylog']
 
 PLUGINS_CONFIG = {
     'netbox_graylog': {
-        'graylog_url': 'http://graylog:9000',
-        'graylog_api_token': 'your-token',
+        'loki_url': 'http://loki:3100',
+        'loki_external_url': 'https://grafana.example.com/explore',
+        'loki_tenant': '',
+        'loki_job': 'syslog',
+        'device_label': 'routerboard',
+        'stream_selector': '',
+        'fallback_to_ip': True,
     }
 }</code></pre>
-                <a href="https://github.com/sieteunoseis/netbox-graylog" target="_blank" class="btn btn-outline-secondary btn-sm">
-                    <i class="mdi mdi-github"></i> Documentation
+                <a href="https://grafana.com/docs/loki/latest/api/" target="_blank" class="btn btn-outline-secondary btn-sm">
+                    <i class="mdi mdi-book-open-page-variant"></i> Loki API Docs
                 </a>
             </div>
         </div>
@@ -139,41 +187,41 @@ PLUGINS_CONFIG = {
 </div>
 
 <script>
-document.getElementById('test-connection').addEventListener('click', function() {
-    var btn = this;
-    var resultDiv = document.getElementById('test-result');
+    document.getElementById('test-connection').addEventListener('click', function() {
+        var btn = this;
+        var resultDiv = document.getElementById('test-result');
 
-    btn.disabled = true;
-    btn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Testing...';
-    resultDiv.style.display = 'none';
+        btn.disabled = true;
+        btn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Testing...';
+        resultDiv.style.display = 'none';
 
-    fetch('{% url "plugins:netbox_graylog:test_connection" %}', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        resultDiv.style.display = 'block';
-        if (data.success) {
-            resultDiv.className = 'alert alert-success';
-            resultDiv.innerHTML = '<i class="mdi mdi-check-circle"></i> ' + data.message;
-        } else {
-            resultDiv.className = 'alert alert-danger';
-            resultDiv.innerHTML = '<i class="mdi mdi-alert-circle"></i> ' + data.error;
-        }
-    })
-    .catch(error => {
-        resultDiv.style.display = 'block';
-        resultDiv.className = 'alert alert-danger';
-        resultDiv.innerHTML = '<i class="mdi mdi-alert-circle"></i> Request failed: ' + error;
-    })
-    .finally(() => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="mdi mdi-play"></i> Test Connection';
+        fetch('{% url "plugins:netbox_graylog:test_connection" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                resultDiv.style.display = 'block';
+                if (data.success) {
+                    resultDiv.className = 'alert alert-success';
+                    resultDiv.innerHTML = '<i class="mdi mdi-check-circle"></i> ' + data.message;
+                } else {
+                    resultDiv.className = 'alert alert-danger';
+                    resultDiv.innerHTML = '<i class="mdi mdi-alert-circle"></i> ' + data.error;
+                }
+            })
+            .catch(error => {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'alert alert-danger';
+                resultDiv.innerHTML = '<i class="mdi mdi-alert-circle"></i> Request failed: ' + error;
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="mdi mdi-play"></i> Test Connection';
+            });
     });
-});
 </script>
 {% endblock %}

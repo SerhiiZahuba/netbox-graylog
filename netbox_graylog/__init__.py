@@ -1,24 +1,24 @@
 """
-NetBox Graylog Plugin
+NetBox Loki plugin.
 
-Display recent Graylog logs in Device and VirtualMachine detail pages.
+Display recent Loki logs in Device and VirtualMachine detail pages.
 """
 
 import logging
 
 from netbox.plugins import PluginConfig
 
-__version__ = "1.1.9"
+__version__ = "1.2.0"
 
 logger = logging.getLogger(__name__)
 
 
 class GraylogConfig(PluginConfig):
-    """Plugin configuration for NetBox Graylog integration."""
+    """Plugin configuration for NetBox Loki integration."""
 
     name = "netbox_graylog"
-    verbose_name = "NetBox Graylog"
-    description = "Display recent Graylog logs in device and VM detail pages"
+    verbose_name = "NetBox Loki Logs"
+    description = "Display recent Loki logs in device, VM, and endpoint detail pages"
     version = __version__
     author = "Jeremy Worden"
     author_email = "jeremy.worden@gmail.com"
@@ -31,15 +31,22 @@ class GraylogConfig(PluginConfig):
 
     # Default configuration values
     default_settings = {
-        "graylog_url": "http://graylog:9000",
-        "graylog_api_token": "",
-        "log_limit": 50,
-        "time_range": 3600,  # 1 hour in seconds
-        "timeout": 10,  # API timeout in seconds
-        "cache_timeout": 60,  # Cache results for 60 seconds
-        "search_field": "source",  # Field to search (source, gl2_remote_ip)
-        "use_fqdn": True,  # Use FQDN for hostname matching
-        "fallback_to_ip": True,  # Fall back to primary IP if hostname not found
+        "loki_url": "http://localhost:3100",
+        "loki_external_url": "",
+        "loki_tenant": "",
+        "loki_username": "",
+        "loki_password": "",
+        "loki_bearer_token": "",
+        "loki_job": "syslog",
+        "device_label": "routerboard",
+        "stream_selector": "",
+        "log_limit": 100,
+        "time_range": 3600,
+        "timeout": 10,
+        "cache_timeout": 60,
+        "verify_tls": True,
+        "use_regex_matching": True,
+        "fallback_to_ip": True,
     }
 
     def ready(self):
@@ -50,7 +57,7 @@ class GraylogConfig(PluginConfig):
         self._register_endpoint_views()
 
     def _register_endpoint_views(self):
-        """Register Graylog Logs tab for Endpoints if plugin is installed."""
+        """Register Loki Logs tab for Endpoints if plugin is installed."""
         import sys
 
         # Quick check if netbox_endpoints is available
@@ -73,13 +80,13 @@ class GraylogConfig(PluginConfig):
 
             @register_model_view(Endpoint, name="graylog_logs", path="logs")
             class EndpointGraylogLogsView(generic.ObjectView):
-                """Display Graylog logs for an Endpoint with async loading."""
+                """Display Loki logs for an Endpoint with async loading."""
 
                 queryset = Endpoint.objects.all()
                 template_name = "netbox_graylog/endpoint_logs_tab.html"
 
                 tab = ViewTab(
-                    label="Graylog",
+                    label="Loki",
                     weight=9004,
                     permission="netbox_endpoints.view_endpoint",
                     hide_if_empty=False,
@@ -99,7 +106,7 @@ class GraylogConfig(PluginConfig):
                         },
                     )
 
-            logger.info("Registered Graylog Logs tab for Endpoint model")
+            logger.info("Registered Loki Logs tab for Endpoint model")
         except ImportError:
             logger.debug("netbox_endpoints not installed, skipping endpoint view registration")
         except Exception as e:

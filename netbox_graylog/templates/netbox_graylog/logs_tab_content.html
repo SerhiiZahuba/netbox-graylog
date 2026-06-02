@@ -2,11 +2,10 @@
 
 <div class="row mb-3">
     <div class="col-md-12">
-        {# Time Range Selector #}
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
-                    <i class="mdi mdi-file-document-outline"></i> Graylog Logs
+                    <i class="mdi mdi-file-document-outline"></i> Loki Logs
                 </h5>
                 <div class="btn-group" role="group" aria-label="Time range">
                     <a href="?range=300" class="btn btn-sm {% if time_range == 300 %}btn-primary{% else %}btn-outline-secondary{% endif %}">5m</a>
@@ -18,21 +17,19 @@
                 </div>
             </div>
             <div class="card-body">
-                {# Query Info #}
                 <div class="mb-3">
                     <small class="text-muted">
                         Query: <code>{{ query }}</code>
                         {% if search_type == 'ip' %}
-                            <span class="badge bg-info text-dark">Matched by IP</span>
-                        {% elif search_type == 'source_ip' %}
-                            <span class="badge bg-info text-dark">Matched by source IP</span>
+                        <span class="badge bg-info text-dark">Matched by IP</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Matched by name</span>
                         {% endif %}
-                        | Found: <strong>{{ total_results }}</strong> messages
+                        | Found: <strong>{{ total_results }}</strong> log lines
                         | Showing: <strong>{{ logs|length }}</strong>
                     </small>
                 </div>
 
-                {# Error Display #}
                 {% if error %}
                 <div class="alert alert-danger" role="alert">
                     <i class="mdi mdi-alert-circle"></i>
@@ -40,65 +37,63 @@
                 </div>
                 {% endif %}
 
-                {# Logs Table #}
                 {% if logs %}
                 <div class="table-responsive">
                     <table class="table table-hover table-sm">
                         <thead class="table-light">
-                            <tr>
-                                <th style="width: 160px;">Timestamp</th>
-                                <th style="width: 150px;">Source</th>
-                                <th style="width: 100px;">Facility</th>
-                                <th>Message</th>
-                                <th style="width: 40px;"></th>
-                            </tr>
+                        <tr>
+                            <th style="width: 180px;">Timestamp</th>
+                            <th style="width: 160px;">Source</th>
+                            <th style="width: 120px;">Job</th>
+                            <th style="width: 140px;">Severity</th>
+                            <th>Message</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {% for log in logs %}
-                            <tr>
-                                <td class="text-nowrap">
-                                    <small>{{ log.message.timestamp }}</small>
-                                </td>
-                                <td>
-                                    <small class="text-muted">{{ log.message.source|default:"-" }}</small>
-                                </td>
-                                <td>
-                                    {% with facility=log.message.facility %}
-                                    {% if facility == 'local0' or facility == 'local7' %}
-                                    <span class="badge text-bg-primary">{{ facility }}</span>
-                                    {% elif facility == 'daemon' or facility == 'syslog' %}
-                                    <span class="badge text-bg-info">{{ facility }}</span>
-                                    {% elif facility == 'auth' or facility == 'authpriv' %}
-                                    <span class="badge text-bg-warning">{{ facility }}</span>
-                                    {% elif facility == 'kern' %}
-                                    <span class="badge text-bg-danger">{{ facility }}</span>
-                                    {% else %}
-                                    <span class="badge text-bg-secondary">{{ facility|default:"-" }}</span>
-                                    {% endif %}
-                                    {% endwith %}
-                                </td>
-                                <td>
-                                    <code class="small" style="word-break: break-word;">{{ log.message.message|truncatechars:500 }}</code>
-                                </td>
-                                <td class="text-center">
-                                    {% if log.message.message_id and log.index %}
-                                    <a href="{{ graylog_base_url }}/messages/{{ log.index }}/{{ log.message.message_id }}"
-                                       target="_blank"
-                                       title="View in Graylog"
-                                       class="text-muted">
-                                        <i class="mdi mdi-open-in-new"></i>
-                                    </a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
+                        {% for log in logs %}
+                        <tr>
+                            <td class="text-nowrap">
+                                <small>{{ log.message.timestamp_display|default:log.message.timestamp }}</small>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ log.message.source|default:"-" }}</small>
+                            </td>
+                            <td>
+                                <span class="badge text-bg-info">{{ log.message.job|default:"-" }}</span>
+                            </td>
+                            <td>
+                                {% with severity=log.message.severity|lower %}
+                                {% if severity == 'critical' or severity == 'fatal' or severity == 'error' %}
+                                <span class="badge text-bg-danger">{{ log.message.severity|default:"-" }}</span>
+                                {% elif severity == 'warn' or severity == 'warning' %}
+                                <span class="badge text-bg-warning">{{ log.message.severity|default:"-" }}</span>
+                                {% elif severity == 'info' %}
+                                <span class="badge text-bg-primary">{{ log.message.severity|default:"-" }}</span>
+                                {% else %}
+                                <span class="badge text-bg-secondary">{{ log.message.severity|default:"-" }}</span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <code class="small" style="word-break: break-word;">{{ log.message.message|truncatechars:500 }}</code>
+                            </td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% elif not error %}
                 <div class="alert alert-info" role="alert">
                     <i class="mdi mdi-information-outline"></i>
-                    No logs found for this device in the selected time range.
+                    No Loki logs found for this object in the selected time range.
+                </div>
+                {% endif %}
+
+                {% if external_log_url %}
+                <div class="mt-3">
+                    <a href="{{ external_log_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <i class="mdi mdi-open-in-new"></i> Open Loki
+                    </a>
                 </div>
                 {% endif %}
             </div>

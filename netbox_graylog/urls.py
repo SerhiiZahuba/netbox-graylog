@@ -1,5 +1,5 @@
 """
-URL routing for NetBox Graylog Plugin.
+URL routing for the NetBox Loki plugin.
 """
 
 from django.urls import path

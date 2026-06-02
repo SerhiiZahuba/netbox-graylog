@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-graylog"
-version = "1.1.9"
-description = "NetBox plugin to display Graylog logs in device and VM detail pages"
+version = "1.2.0"
+description = "NetBox plugin to display Loki logs in device, VM, and endpoint detail pages"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
@@ -22,17 +22,17 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-keywords = ["netbox", "graylog", "logging", "plugin"]
+keywords = ["netbox", "loki", "logging", "plugin"]
 dependencies = [
     "requests>=2.28.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/sieteunoseis/netbox-graylog"
-Repository = "https://github.com/sieteunoseis/netbox-graylog"
-Issues = "https://github.com/sieteunoseis/netbox-graylog/issues"
-Documentation = "https://github.com/sieteunoseis/netbox-graylog/wiki"
-Changelog = "https://github.com/sieteunoseis/netbox-graylog/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/SerhiiZahuba/netbox-graylog"
+Repository = "https://github.com/SerhiiZahuba/netbox-graylog"
+Issues = "https://github.com/SerhiiZahuba/netbox-graylog/issues"
+Documentation = "https://github.com/SerhiiZahuba/netbox-graylog"
+Changelog = "https://github.com/SerhiiZahuba/netbox-graylog/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [

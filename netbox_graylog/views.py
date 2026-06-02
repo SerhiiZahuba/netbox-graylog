@@ -1,16 +1,21 @@
 """
-Views for NetBox Graylog Plugin
+Views for the NetBox Loki plugin.
 
-Registers custom tabs on Device and VirtualMachine detail views.
-Provides settings configuration UI.
+Registers custom tabs on Device and VirtualMachine detail views and provides
+an informational settings UI.
 """
+
+from __future__ import annotations
+
+import logging
+from typing import Any
 
 from dcim.models import Device
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.views import View
 from netbox.views import generic
@@ -20,7 +25,8 @@ from virtualization.models import VirtualMachine
 from .forms import GraylogSettingsForm
 from .graylog_client import get_client
 
-# Check if netbox_endpoints plugin is installed
+logger = logging.getLogger(__name__)
+
 try:
     from netbox_endpoints.models import Endpoint
 
@@ -29,27 +35,61 @@ except ImportError:
     ENDPOINTS_PLUGIN_INSTALLED = False
 
 
+def _parse_time_range(raw_value: str | None) -> int | None:
+    if not raw_value:
+        return None
+    try:
+        return int(raw_value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _external_log_url() -> str:
+    config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
+    return (config.get("loki_external_url") or config.get("loki_url") or "").rstrip("/")
+
+
+def _render_log_response(
+    request,
+    *,
+    obj: Any,
+    logs_data: dict[str, Any],
+    default_search_type: str = "name",
+) -> HttpResponse:
+    return HttpResponse(
+        render_to_string(
+            "netbox_graylog/logs_tab_content.html",
+            {
+                "object": obj,
+                "logs": logs_data.get("messages", []),
+                "error": logs_data.get("error"),
+                "total_results": logs_data.get("total_results", 0),
+                "query": logs_data.get("query", ""),
+                "time_range": logs_data.get("time_range", 3600),
+                "search_type": logs_data.get("search_type", default_search_type),
+                "external_log_url": _external_log_url(),
+            },
+            request=request,
+        )
+    )
+
+
 @register_model_view(Device, name="graylog_logs", path="logs")
 class DeviceGraylogLogsView(generic.ObjectView):
-    """Display Graylog logs for a Device with async loading."""
+    """Display Loki logs for a Device with async loading."""
 
     queryset = Device.objects.all()
     template_name = "netbox_graylog/device_logs_tab.html"
 
     tab = ViewTab(
-        label="Graylog",
+        label="Loki",
         weight=9004,
         permission="dcim.view_device",
         hide_if_empty=False,
     )
 
     def get(self, request, pk):
-        """Render initial tab with loading spinner - content loads via htmx."""
-        logger.error(f"HTMX DEVICE REQUEST pk={pk}")
-        device = Device.objects.get(pk=pk)
-        logger.error(f"DEVICE={device.name}")
-
-        # Pass time_range for htmx URL construction
+        device = get_object_or_404(Device, pk=pk)
         time_range = request.GET.get("range", "")
 
         return render(
@@ -65,85 +105,33 @@ class DeviceGraylogLogsView(generic.ObjectView):
 
 
 class DeviceGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    """HTMX endpoint that returns Graylog content for async loading."""
+    """HTMX endpoint that returns Loki content for async loading."""
 
     permission_required = "dcim.view_device"
 
     def get(self, request, pk):
-        """Fetch Graylog logs and return HTML content."""
-        device = Device.objects.get(pk=pk)
-
-        # Get time range from query params (default to config value)
-        time_range = request.GET.get("range", None)
-        if time_range:
-            try:
-                time_range = int(time_range)
-            except ValueError:
-                time_range = None
-
-        # Fetch logs from Graylog
-        client = get_client()
-        config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
-
-        if time_range:
-            hostname = device.virtual_chassis.name if device.virtual_chassis else device.name
-            logs_data = client.search_logs(hostname)
-            logs_data["search_type"] = "hostname"
-        else:
-            logs_data = client.get_logs_for_device(device)
-
-        # Get external Graylog URL for browser links
-        graylog_base_url = config.get("graylog_external_url", config.get("graylog_url", "")).rstrip("/")
-
-        # Transform logs to rename _id to message_id (Django templates can't access underscore-prefixed attrs)
-        logs = []
-        for log in logs_data.get("messages", []):
-            transformed = {
-                "index": log.get("index", ""),
-                "message": {
-                    **log.get("message", {}),
-                    "message_id": log.get("message", {}).get("_id", ""),
-                },
-            }
-            logs.append(transformed)
-
-        return HttpResponse(
-            render_to_string(
-                "netbox_graylog/logs_tab_content.html",
-                {
-                    "object": device,
-                    "logs": logs,
-                    "error": logs_data.get("error"),
-                    "total_results": logs_data.get("total_results", 0),
-                    "query": logs_data.get("query", ""),
-                    "time_range": logs_data.get("time_range", 3600),
-                    "search_type": logs_data.get("search_type", "hostname"),
-                    "graylog_base_url": graylog_base_url,
-                },
-                request=request,
-            )
-        )
+        device = get_object_or_404(Device, pk=pk)
+        time_range = _parse_time_range(request.GET.get("range"))
+        logs_data = get_client().get_logs_for_device(device, time_range=time_range)
+        return _render_log_response(request, obj=device, logs_data=logs_data)
 
 
 @register_model_view(VirtualMachine, name="graylog_logs", path="logs")
 class VirtualMachineGraylogLogsView(generic.ObjectView):
-    """Display Graylog logs for a VirtualMachine with async loading."""
+    """Display Loki logs for a VirtualMachine with async loading."""
 
     queryset = VirtualMachine.objects.all()
     template_name = "netbox_graylog/vm_logs_tab.html"
 
     tab = ViewTab(
-        label="Graylog",
+        label="Loki",
         weight=9004,
         permission="virtualization.view_virtualmachine",
         hide_if_empty=False,
     )
 
     def get(self, request, pk):
-        """Render initial tab with loading spinner - content loads via htmx."""
-        vm = VirtualMachine.objects.get(pk=pk)
-
-        # Pass time_range for htmx URL construction
+        vm = get_object_or_404(VirtualMachine, pk=pk)
         time_range = request.GET.get("range", "")
 
         return render(
@@ -159,210 +147,68 @@ class VirtualMachineGraylogLogsView(generic.ObjectView):
 
 
 class VMGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    """HTMX endpoint that returns Graylog content for VM async loading."""
+    """HTMX endpoint that returns Loki content for VM async loading."""
 
     permission_required = "virtualization.view_virtualmachine"
 
     def get(self, request, pk):
-        """Fetch Graylog logs and return HTML content."""
-        vm = VirtualMachine.objects.get(pk=pk)
-
-        # Get time range from query params
-        time_range = request.GET.get("range", None)
-        if time_range:
-            try:
-                time_range = int(time_range)
-            except ValueError:
-                time_range = None
-
-        # Fetch logs from Graylog
-        client = get_client()
-        config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
-
-        if time_range:
-            # Build query with wildcard (Graylog wildcards are case-insensitive)
-            hostname = vm.name
-            logs_data = client.search_logs(hostname)
-            logs_data["search_type"] = "hostname"
-        else:
-            logs_data = client.get_logs_for_vm(vm)
-
-        # Get external Graylog URL for browser links
-        graylog_base_url = config.get("graylog_external_url", config.get("graylog_url", "")).rstrip("/")
-
-        # Transform logs to rename _id to message_id (Django templates can't access underscore-prefixed attrs)
-        logs = []
-        for log in logs_data.get("messages", []):
-            transformed = {
-                "index": log.get("index", ""),
-                "message": {
-                    **log.get("message", {}),
-                    "message_id": log.get("message", {}).get("_id", ""),
-                },
-            }
-            logs.append(transformed)
-
-        return HttpResponse(
-            render_to_string(
-                "netbox_graylog/logs_tab_content.html",
-                {
-                    "object": vm,
-                    "logs": logs,
-                    "error": logs_data.get("error"),
-                    "total_results": logs_data.get("total_results", 0),
-                    "query": logs_data.get("query", ""),
-                    "time_range": logs_data.get("time_range", 3600),
-                    "search_type": logs_data.get("search_type", "hostname"),
-                    "graylog_base_url": graylog_base_url,
-                },
-                request=request,
-            )
-        )
+        vm = get_object_or_404(VirtualMachine, pk=pk)
+        time_range = _parse_time_range(request.GET.get("range"))
+        logs_data = get_client().get_logs_for_vm(vm, time_range=time_range)
+        return _render_log_response(request, obj=vm, logs_data=logs_data)
 
 
 class GraylogSettingsView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    """View for configuring Graylog plugin settings."""
+    """Read-only view for displaying Loki plugin settings."""
 
     permission_required = "netbox_graylog.configure_graylog"
     template_name = "netbox_graylog/settings.html"
 
-    def get_current_config(self):
-        """Get current plugin configuration."""
+    def get_current_config(self) -> dict[str, Any]:
         return settings.PLUGINS_CONFIG.get("netbox_graylog", {})
 
     def get(self, request):
-        """Display the settings form."""
-        config = self.get_current_config()
-        form = GraylogSettingsForm(initial=config)
-
-        return render(
-            request,
-            self.template_name,
-            {
-                "form": form,
-                "config": config,
-            },
-        )
+        form = GraylogSettingsForm(initial=self.get_current_config())
+        return render(request, self.template_name, {"form": form, "config": self.get_current_config()})
 
     def post(self, request):
-        """Handle settings form submission."""
         form = GraylogSettingsForm(request.POST)
-
         if form.is_valid():
-            # Note: Settings are read-only at runtime in NetBox
-            # Users must update configuration.py manually
-            # This view shows current settings and validates test connections
             messages.warning(
                 request,
-                "Settings must be configured in NetBox's configuration.py file. "
-                "See the README for configuration instructions.",
+                "Plugin settings remain read-only at runtime. Update PLUGINS_CONFIG in NetBox and reload the service.",
             )
         else:
-            messages.error(request, "Invalid settings provided.")
+            messages.error(request, "The provided Loki settings are invalid.")
 
-        return render(
-            request,
-            self.template_name,
-            {
-                "form": form,
-                "config": self.get_current_config(),
-            },
-        )
+        return render(request, self.template_name, {"form": form, "config": self.get_current_config()})
 
 
 class TestConnectionView(View):
-    """Test connection to Graylog API."""
+    """Test connection to the Loki API."""
 
     def post(self, request):
-        """Test the Graylog connection and return result."""
-        client = get_client()
-
-        # Try a simple search to verify connectivity
-        result = client.search_logs("*", time_range=60, limit=1)
-
+        result = get_client().search_logs(time_range=60, limit=1)
         if result.get("error"):
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": result["error"],
-                },
-                status=400,
-            )
+            return JsonResponse({"success": False, "error": result["error"]}, status=400)
 
         return JsonResponse(
             {
                 "success": True,
-                "message": f"Connected successfully. Found {result.get('total_results', 0)} messages in last minute.",
+                "message": f"Connected successfully. Found {result.get('total_results', 0)} log lines in the last minute.",
             }
         )
 
 
-# Endpoint views - only available if netbox_endpoints is installed
 if ENDPOINTS_PLUGIN_INSTALLED:
 
     class EndpointGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
-        """HTMX endpoint that returns Graylog content for Endpoint async loading."""
+        """HTMX endpoint that returns Loki content for endpoint async loading."""
 
         permission_required = "netbox_endpoints.view_endpoint"
 
         def get(self, request, pk):
-            """Fetch Graylog logs and return HTML content."""
-            endpoint = Endpoint.objects.get(pk=pk)
-
-            # Get time range from query params
-            time_range = request.GET.get("range", None)
-            if time_range:
-                try:
-                    time_range = int(time_range)
-                except ValueError:
-                    time_range = None
-
-            # Fetch logs from Graylog
-            client = get_client()
-            config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
-
-            # For endpoints, search by name or MAC address
-            search_term = endpoint.name if endpoint.name else str(endpoint.mac_address)
-
-            if time_range:
-                query = f"source:{search_term}*"
-                logs_data = client.search_logs(query, time_range=time_range)
-                logs_data["search_type"] = "name"
-            else:
-                # Default search by endpoint name/MAC
-                query = f"source:{search_term}*"
-                default_time_range = config.get("time_range", 3600)
-                logs_data = client.search_logs(query, time_range=default_time_range)
-                logs_data["search_type"] = "name"
-
-            # Get external Graylog URL for browser links
-            graylog_base_url = config.get("graylog_external_url", config.get("graylog_url", "")).rstrip("/")
-
-            # Transform logs to rename _id to message_id
-            logs = []
-            for log in logs_data.get("messages", []):
-                transformed = {
-                    "index": log.get("index", ""),
-                    "message": {
-                        **log.get("message", {}),
-                        "message_id": log.get("message", {}).get("_id", ""),
-                    },
-                }
-                logs.append(transformed)
-
-            return HttpResponse(
-                render_to_string(
-                    "netbox_graylog/logs_tab_content.html",
-                    {
-                        "object": endpoint,
-                        "logs": logs,
-                        "error": logs_data.get("error"),
-                        "total_results": logs_data.get("total_results", 0),
-                        "query": logs_data.get("query", ""),
-                        "time_range": logs_data.get("time_range", 3600),
-                        "search_type": logs_data.get("search_type", "name"),
-                        "graylog_base_url": graylog_base_url,
-                    },
-                    request=request,
-                )
-            )
+            endpoint = get_object_or_404(Endpoint, pk=pk)
+            time_range = _parse_time_range(request.GET.get("range"))
+            logs_data = get_client().get_logs_for_endpoint(endpoint, time_range=time_range)
+            return _render_log_response(request, obj=endpoint, logs_data=logs_data)

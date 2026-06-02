@@ -1,11 +1,11 @@
 """
-Navigation menu items for NetBox Graylog Plugin.
+Navigation menu items for the NetBox Loki plugin.
 """
 
 from netbox.plugins import PluginMenu, PluginMenuItem
 
 menu = PluginMenu(
-    label="Graylog",
+    label="Loki",
     groups=(
         (
             "Settings",
