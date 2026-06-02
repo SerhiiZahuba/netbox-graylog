@@ -66,6 +66,7 @@ class GraylogClient:
         endpoint = f"{self.base_url}/wazuh-alerts-*/_search"
 
         try:
+            logger.error(f"WAZUH QUERY IP = {query}")
             body = {
                 "size": limit,
                 "sort": [
@@ -163,14 +164,14 @@ class GraylogClient:
         # Build query - hostname with optional IP fallback using OR
         hostname_query = f"{search_field}:{hostname}*"
 
-        if device.primary_ip4:
-            query = str(device.primary_ip4.address).split("/")[0]
+        if vm.primary_ip4:
+            query = str(vm.primary_ip4.address).split("/")[0]
         else:
-            query = device.name
+            query = vm.name
 
         result = self.search_logs(query)
-        result["search_type"] = "combined" if " OR " in query else "hostname"
-        result["device_name"] = device.name
+        result["search_type"] = "ip"
+        result["vm_name"] = vm.name
         return result
 
     def get_logs_for_vm(self, vm):
