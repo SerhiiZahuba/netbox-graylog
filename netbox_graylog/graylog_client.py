@@ -62,7 +62,7 @@ class GraylogClient:
             logger.debug(f"Returning cached results for query: {query}")
             return cached
 
-        endpoint = f"{self.base_url}/api/search/universal/relative"
+        endpoint = f"{self.base_url}/wazuh-alerts-*/_search"
 
         params = {
             "query": query,
@@ -75,7 +75,7 @@ class GraylogClient:
             params["fields"] = ",".join(fields)
 
         try:
-            response = requests.get(
+            response = requests.post(
                 endpoint,
                 params=params,
                 headers=self._get_headers(),
