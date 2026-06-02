@@ -19,23 +19,54 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 
+def _read_netbox_setting(config: dict[str, Any], plugin_key: str, setting_names: tuple[str, ...], default: Any) -> Any:
+    """Read a plugin setting from PLUGINS_CONFIG first, then from top-level Django settings."""
+    if plugin_key in config:
+        return config[plugin_key]
+
+    for setting_name in setting_names:
+        if hasattr(settings, setting_name):
+            return getattr(settings, setting_name)
+
+    return default
+
+
 class LokiClient:
     """Client for querying Grafana Loki."""
 
     def __init__(self) -> None:
         self.config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
-        self.base_url = self.config.get("loki_url", "http://localhost:3100").rstrip("/")
-        self.timeout = self.config.get("timeout", 10)
-        self.cache_timeout = self.config.get("cache_timeout", 60)
-        self.verify_tls = self.config.get("verify_tls", True)
+        self.base_url = _read_netbox_setting(
+            self.config,
+            "loki_url",
+            ("NETBOX_GRAYLOG_LOKI_URL", "LOKI_URL"),
+            "http://localhost:3100",
+        ).rstrip("/")
+        self.timeout = _read_netbox_setting(self.config, "timeout", ("NETBOX_GRAYLOG_TIMEOUT",), 10)
+        self.cache_timeout = _read_netbox_setting(self.config, "cache_timeout", ("NETBOX_GRAYLOG_CACHE_TIMEOUT",), 60)
+        self.verify_tls = _read_netbox_setting(self.config, "verify_tls", ("NETBOX_GRAYLOG_VERIFY_TLS",), True)
 
     def _get_headers(self) -> dict[str, str]:
         headers = {
             "Accept": "application/json",
             "X-Requested-By": "NetBox-Loki-Plugin",
         }
-        tenant = self.config.get("loki_tenant", "").strip()
-        bearer = self.config.get("loki_bearer_token", "").strip()
+        tenant = str(
+            _read_netbox_setting(
+                self.config,
+                "loki_tenant",
+                ("NETBOX_GRAYLOG_LOKI_TENANT", "LOKI_TENANT", "LOKI_X_SCOPE_ORGID"),
+                "docker",
+            )
+        ).strip()
+        bearer = str(
+            _read_netbox_setting(
+                self.config,
+                "loki_bearer_token",
+                ("NETBOX_GRAYLOG_LOKI_BEARER_TOKEN", "LOKI_BEARER_TOKEN"),
+                "",
+            )
+        ).strip()
         if tenant:
             headers["X-Scope-OrgID"] = tenant
         if bearer:
@@ -43,8 +74,20 @@ class LokiClient:
         return headers
 
     def _get_auth(self) -> tuple[str, str] | None:
-        username = self.config.get("loki_username", "").strip()
-        password = self.config.get("loki_password", "")
+        username = str(
+            _read_netbox_setting(
+                self.config,
+                "loki_username",
+                ("NETBOX_GRAYLOG_LOKI_USERNAME", "LOKI_USERNAME"),
+                "",
+            )
+        ).strip()
+        password = _read_netbox_setting(
+            self.config,
+            "loki_password",
+            ("NETBOX_GRAYLOG_LOKI_PASSWORD", "LOKI_PASSWORD"),
+            "",
+        )
         if username:
             return (username, password)
         return None

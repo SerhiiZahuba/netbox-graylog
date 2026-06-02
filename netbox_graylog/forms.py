@@ -36,10 +36,11 @@ class GraylogSettingsForm(forms.Form):
         label="Tenant Header",
         help_text="Optional value for the X-Scope-OrgID header when Loki multi-tenancy is enabled.",
         required=False,
+        initial="docker",
         widget=forms.TextInput(
             attrs={
                 "class": "form-control",
-                "placeholder": "tenant-a",
+                "placeholder": "docker",
             }
         ),
     )

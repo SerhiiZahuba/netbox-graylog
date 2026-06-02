@@ -33,7 +33,7 @@ class GraylogConfig(PluginConfig):
     default_settings = {
         "loki_url": "http://localhost:3100",
         "loki_external_url": "",
-        "loki_tenant": "",
+        "loki_tenant": "docker",
         "loki_username": "",
         "loki_password": "",
         "loki_bearer_token": "",
