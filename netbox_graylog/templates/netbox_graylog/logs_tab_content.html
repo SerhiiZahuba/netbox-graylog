@@ -17,17 +17,16 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="mb-3">
-                    <small class="text-muted">
-                        Query: <code>{{ query }}</code>
-                        {% if search_type == 'ip' %}
-                        <span class="badge bg-info text-dark">Matched by IP</span>
-                        {% else %}
-                        <span class="badge bg-secondary">Matched by name</span>
-                        {% endif %}
-                        | Found: <strong>{{ total_results }}</strong> log lines
-                        | Showing: <strong>{{ logs|length }}</strong>
-                    </small>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <small class="text-muted">Query:</small>
+                    <code class="small">{{ query }}</code>
+                    {% if search_type == 'ip' %}
+                    <span class="badge bg-info text-dark">Matched by IP</span>
+                    {% else %}
+                    <span class="badge bg-secondary text-white">Matched by name</span>
+                    {% endif %}
+                    <small class="text-muted">Found: <strong>{{ total_results }}</strong> log lines</small>
+                    <small class="text-muted">Showing: <strong>{{ logs|length }}</strong></small>
                 </div>
 
                 {% if error %}
@@ -69,13 +68,15 @@
                                 <span class="badge text-bg-warning">{{ log.message.severity|default:"-" }}</span>
                                 {% elif severity == 'info' %}
                                 <span class="badge text-bg-primary">{{ log.message.severity|default:"-" }}</span>
-                                {% else %}
+                                {% elif severity == 'account' %}
                                 <span class="badge text-bg-secondary">{{ log.message.severity|default:"-" }}</span>
+                                {% else %}
+                                <span class="badge border text-body">{{ log.message.severity|default:"-" }}</span>
                                 {% endif %}
                                 {% endwith %}
                             </td>
                             <td>
-                                <code class="small" style="word-break: break-word;">{{ log.message.message|truncatechars:500 }}</code>
+                                <code class="small d-inline-block py-1 px-2" style="word-break: break-word; white-space: pre-wrap;">{{ log.message.message|truncatechars:500 }}</code>
                             </td>
                         </tr>
                         {% endfor %}

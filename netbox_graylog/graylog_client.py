@@ -209,7 +209,7 @@ class LokiClient:
                             "message": line,
                             "source": self._derive_source(labels),
                             "job": labels.get("job", ""),
-                            "severity": labels.get("severity", labels.get("level", "")),
+                            "severity": self._derive_severity(labels, line),
                             "labels": labels,
                         }
                     }
@@ -230,6 +230,19 @@ class LokiClient:
             value = labels.get(key)
             if value:
                 return value
+        return ""
+
+    @staticmethod
+    def _derive_severity(labels: dict[str, str], line: str) -> str:
+        label_severity = labels.get("severity") or labels.get("level")
+        if label_severity:
+            return str(label_severity)
+
+        match = re.search(r":(?P<severity>[A-Za-z][A-Za-z0-9_-]{1,31}):", line)
+        if match:
+            raw = match.group("severity")
+            return raw[:1].upper() + raw[1:]
+
         return ""
 
     @staticmethod
@@ -262,20 +275,32 @@ class LokiClient:
     def get_logs_for_device(self, device: Any, *, time_range: int | None = None) -> dict[str, Any]:
         hostname = device.virtual_chassis.name if getattr(device, "virtual_chassis", None) else device.name
         fallback_ip = self._primary_ip_value(getattr(device, "primary_ip", None))
-        result = self._search_with_fallback(name=hostname, time_range=time_range, fallback_ip=fallback_ip)
+        result = self._search_with_fallback(
+            name=hostname,
+            time_range=time_range,
+            fallback_ip=fallback_ip,
+        )
         result["device_name"] = device.name
         return result
 
     def get_logs_for_vm(self, vm: Any, *, time_range: int | None = None) -> dict[str, Any]:
         fallback_ip = self._primary_ip_value(getattr(vm, "primary_ip", None))
-        result = self._search_with_fallback(name=vm.name, time_range=time_range, fallback_ip=fallback_ip)
+        result = self._search_with_fallback(
+            name=vm.name,
+            time_range=time_range,
+            fallback_ip=fallback_ip,
+        )
         result["vm_name"] = vm.name
         return result
 
     def get_logs_for_endpoint(self, endpoint: Any, *, time_range: int | None = None) -> dict[str, Any]:
         search_value = endpoint.name or str(endpoint.mac_address)
         fallback_ip = self._primary_ip_value(getattr(endpoint, "primary_ip", None))
-        result = self._search_with_fallback(name=search_value, time_range=time_range, fallback_ip=fallback_ip)
+        result = self._search_with_fallback(
+            name=search_value,
+            time_range=time_range,
+            fallback_ip=fallback_ip,
+        )
         result["endpoint_name"] = search_value
         return result
 
