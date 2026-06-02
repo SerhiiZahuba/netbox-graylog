@@ -19,8 +19,9 @@ class GraylogClient:
     def __init__(self):
         """Initialize the Graylog client with plugin configuration."""
         self.config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
-        self.base_url = self.config.get("graylog_url", "http://graylog:9000")
-        self.api_token = self.config.get("graylog_api_token", "")
+        self.base_url = self.config.get("graylog_url", "https://wazuh.creditexpress.com:9200")
+        self.username = self.config.get("graylog_user", "")
+        self.password = self.config.get("graylog_password", "")
         self.timeout = self.config.get("timeout", 10)
         self.cache_timeout = self.config.get("cache_timeout", 60)
 
