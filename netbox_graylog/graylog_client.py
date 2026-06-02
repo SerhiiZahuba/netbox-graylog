@@ -68,38 +68,45 @@ class GraylogClient:
         try:
             body = {
                 "size": limit,
+                "sort": [
+                    {
+                        "@timestamp": {
+                            "order": "desc"
+                        }
+                    }
+                ],
                 "query": {
-                "match_all": {}
+                    "match_all": {}
+                }
             }
-        }
 
-        response = requests.post(
-            endpoint,
-            json=body,
-            headers={
-            "Content-Type": "application/json"
-        },
-            auth=self._get_auth(),
-            timeout=self.timeout,
-            verify=False,
-        )
+            response = requests.post(
+                endpoint,
+                json=body,
+                headers={
+                    "Content-Type": "application/json"
+                },
+                auth=self._get_auth(),
+                timeout=self.timeout,
+                verify=False,
+            )
 
-        logger.error(response.text)
+            logger.error(response.text[:1000])
 
-        response.raise_for_status()
+            response.raise_for_status()
 
-        data = response.json()
+            data = response.json()
 
-        result = {
-            "messages": data["hits"]["hits"],
-            "total_results": data["hits"]["total"]["value"],
-            "query": query,
-            "time_range": time_range,
-        }
+            result = {
+                "messages": data["hits"]["hits"],
+                "total_results": data["hits"]["total"]["value"],
+                "query": query,
+                "time_range": time_range,
+            }
 
-        cache.set(cache_key, result, self.cache_timeout)
+            cache.set(cache_key, result, self.cache_timeout)
 
-        return result
+            return result
 
         except requests.exceptions.Timeout:
             logger.error(f"Timeout connecting to Graylog: {self.base_url}")
