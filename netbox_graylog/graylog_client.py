@@ -76,7 +76,9 @@ class GraylogClient:
                     }
                 ],
                 "query": {
-                    "match_all": {}
+                    "term": {
+                        "location.keyword": query
+                    }
                 }
             }
 
@@ -161,12 +163,10 @@ class GraylogClient:
         # Build query - hostname with optional IP fallback using OR
         hostname_query = f"{search_field}:{hostname}*"
 
-        if fallback_to_ip and device.primary_ip4:
-            ip = str(device.primary_ip4.address).split("/")[0]
-            # Combine hostname and IP queries with OR for single search
-            query = f"({hostname_query} OR gl2_remote_ip:{ip} OR source:{ip})"
+        if device.primary_ip4:
+            query = str(device.primary_ip4.address).split("/")[0]
         else:
-            query = hostname_query
+            query = device.name
 
         result = self.search_logs(query)
         result["search_type"] = "combined" if " OR " in query else "hostname"
