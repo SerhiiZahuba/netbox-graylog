@@ -50,7 +50,7 @@ class GraylogClient:
         Returns:
             dict with 'messages' list or 'error' string
         """
-        if not self.api_token:
+        if not self.username or not self.password:
             return {"error": "Graylog API token not configured", "messages": []}
 
         time_range = time_range or self.config.get("time_range", 3600)
