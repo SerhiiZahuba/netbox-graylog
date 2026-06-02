@@ -27,7 +27,7 @@ class GraylogClient:
     def _get_auth(self):
         """Get authentication tuple for requests."""
         # Graylog uses token:token for API token auth
-        return (self.api_token, "token")
+        return (self.username, self.password)
 
     def _get_headers(self):
         """Get default headers for API requests."""
