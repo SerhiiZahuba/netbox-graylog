@@ -9,9 +9,12 @@ import logging
 import requests
 from django.conf import settings
 from django.core.cache import cache
+import time
 
 logger = logging.getLogger(__name__)
 
+end = int(time.time() * 1000000000)
+start = end - (24 * 3600 * 1000000000)
 
 class GraylogClient:
     """Client for interacting with Graylog API."""
@@ -19,16 +22,13 @@ class GraylogClient:
     def __init__(self):
         """Initialize the Graylog client with plugin configuration."""
         self.config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
-        self.base_url = self.config.get("graylog_url", "https://wazuh.creditexpress.com:9200")
+        self.base_url = self.config.get("graylog_url", "http://192.168.110.117:8080")
         self.username = self.config.get("wazuh_user", "")
         self.password = self.config.get("wazuh_password", "")
         self.timeout = self.config.get("timeout", 10)
         self.cache_timeout = self.config.get("cache_timeout", 60)
 
-    def _get_auth(self):
-        """Get authentication tuple for requests."""
-        # Graylog uses token:token for API token auth
-        return (self.username, self.password)
+
 
     def _get_headers(self):
         """Get default headers for API requests."""
@@ -37,141 +37,86 @@ class GraylogClient:
             "X-Requested-By": "NetBox-Graylog-Plugin",
         }
 
-    def search_logs(self, query, time_range=None, limit=None, fields=None):
-        """
-        Search for logs in Graylog.
+    def search_logs(self, routerboard, limit=None):
+        logger.error(f"LOKI START routerboard={routerboard}")
 
-        Args:
-            query: Lucene query string (e.g., "source:hostname")
-            time_range: Time range in seconds (default from config)
-            limit: Maximum number of results (default from config)
-            fields: List of fields to return (optional)
+        limit = limit or self.config.get("log_limit", 100)
 
-        Returns:
-            dict with 'messages' list or 'error' string
-        """
-        if not self.username or not self.password:
-            return {"error": "Wazuh credentials not configured", "messages": []}
-
-        time_range = time_range or self.config.get("time_range", 3600)
-        limit = limit or self.config.get("log_limit", 50)
-
-        # Check cache first
-        cache_key = f"graylog_logs_{query}_{time_range}_{limit}"
+        cache_key = f"loki_logs_{routerboard}_{limit}"
+        logger.error(f"LOKI QUERY = {query}")
         cached = cache.get(cache_key)
-        if cached is not None:
-            logger.debug(f"Returning cached results for query: {query}")
+        if cached:
             return cached
 
-        endpoint = f"{self.base_url}/wazuh-alerts-*/_search"
+        endpoint = f"{self.base_url}/loki/api/v1/query_range"
+
+        query = f'{{job="syslog", routerboard="{routerboard}"}}'
 
         try:
-            logger.error(f"WAZUH QUERY IP = {query}")
-            body = {
-                "size": limit,
-                "sort": [
-                    {
-                        "@timestamp": {
-                            "order": "desc"
-                        }
-                    }
-                ],
-                "query": {
-                    "term": {
-                        "location.keyword": query
-                    }
-                }
-            }
 
-            response = requests.post(
+            response = requests.get(
                 endpoint,
-                json=body,
-                headers={
-                    "Content-Type": "application/json"
+                params={
+                    "query": query,
+                    "start": start,
+                    "end": end,
+                    "limit": limit,
+                    "direction": "backward",
                 },
-                auth=self._get_auth(),
+                headers={
+                    "Accept": "application/json",
+                    "X-Scope-OrgID": "docker",
+                },
                 timeout=self.timeout,
                 verify=False,
             )
-
-            logger.error(response.text[:1000])
 
             response.raise_for_status()
 
             data = response.json()
 
+            messages = []
+
+            for stream in data["data"]["result"]:
+
+                labels = stream["stream"]
+
+                for ts, line in stream["values"]:
+
+                    messages.append({
+                        "message": {
+                            "timestamp": ts,
+                            "message": line,
+                            "source": labels.get("routerboard"),
+                            "facility": labels.get("job"),
+                            **labels
+                        }
+                    })
+
             result = {
-                "messages": data["hits"]["hits"],
-                "total_results": data["hits"]["total"]["value"],
+                "messages": messages,
+                "total_results": len(messages),
                 "query": query,
-                "time_range": time_range,
             }
 
             cache.set(cache_key, result, self.cache_timeout)
 
             return result
 
-        except requests.exceptions.Timeout:
-            logger.error(f"Timeout connecting to Graylog: {self.base_url}")
-            return {"error": "Connection timeout", "messages": []}
-        except requests.exceptions.ConnectionError as e:
-            logger.error(f"Connection error to Graylog: {e}")
-            return {"error": f"Connection failed: {self.base_url}", "messages": []}
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"HTTP error from Graylog: {e}")
-            if e.response.status_code == 401:
-                return {
-                    "error": "Authentication failed - check API token",
-                    "messages": [],
-                }
-            elif e.response.status_code == 403:
-                return {
-                    "error": "Permission denied - check token permissions",
-                    "messages": [],
-                }
-            return {"error": f"HTTP error: {e.response.status_code}", "messages": []}
         except Exception as e:
-            logger.exception(f"Unexpected error querying Graylog: {e}")
-            return {"error": str(e), "messages": []}
+            logger.exception(e)
+
+            return {
+                "error": str(e),
+                "messages": []
+            }
 
     def get_logs_for_device(self, device):
-        """
-        Get logs for a NetBox device.
 
-        Attempts to find logs by:
-        1. Device name (FQDN or shortname) - case-insensitive regex match
-        2. Primary IP address (if fallback enabled)
+        result = self.search_logs(device.name)
 
-        For virtual chassis members, uses the chassis name (original hostname)
-        instead of the member-specific name (e.g., "switch" instead of "switch.2").
+        result["device_name"] = device.name
 
-        Args:
-            device: NetBox Device object
-
-        Returns:
-            dict with 'messages' list or 'error' string
-        """
-        search_field = self.config.get("search_field", "source")
-        use_fqdn = self.config.get("use_fqdn", True)
-        fallback_to_ip = self.config.get("fallback_to_ip", True)
-
-        # Build search term from device name
-        # Use VC name for virtual chassis members (original hostname)
-        hostname = device.virtual_chassis.name if device.virtual_chassis else device.name
-        if not use_fqdn and "." in hostname:
-            hostname = hostname.split(".")[0]
-
-        # Build query - hostname with optional IP fallback using OR
-        hostname_query = f"{search_field}:{hostname}*"
-
-        if vm.primary_ip4:
-            query = str(vm.primary_ip4.address).split("/")[0]
-        else:
-            query = vm.name
-
-        result = self.search_logs(query)
-        result["search_type"] = "ip"
-        result["vm_name"] = vm.name
         return result
 
     def get_logs_for_vm(self, vm):
@@ -198,20 +143,6 @@ class GraylogClient:
         query = f"{search_field}:{hostname}*"
         result = self.search_logs(query)
 
-        # If no results and fallback enabled, try primary IP
-        if fallback_to_ip and not result.get("messages") and not result.get("error") and vm.primary_ip4:
-            ip = str(vm.primary_ip4.address).split("/")[0]
-            query = f"gl2_remote_ip:{ip}"
-            result = self.search_logs(query)
-            if result.get("messages"):
-                result["search_type"] = "ip"
-            else:
-                query = f"source:{ip}"
-                result = self.search_logs(query)
-                if result.get("messages"):
-                    result["search_type"] = "source_ip"
-        else:
-            result["search_type"] = "hostname"
 
         result["vm_name"] = vm.name
         return result

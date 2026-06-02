@@ -1,27 +1,61 @@
 """
-Forms for NetBox Graylog Plugin settings.
+Forms for NetBox Loki Plugin settings.
 """
 
 from django import forms
 
 
 class GraylogSettingsForm(forms.Form):
-    """Form for configuring Graylog plugin settings."""
+    """Form for configuring Loki plugin settings."""
 
     graylog_url = forms.URLField(
-        label="Graylog URL",
-        help_text="Base URL for Graylog API (e.g., http://graylog:9000)",
+        label="Loki URL",
+        help_text="Base URL for Loki API (e.g., http://192.168.110.117:8080)",
         required=True,
-        widget=forms.URLInput(attrs={"class": "form-control", "placeholder": "http://graylog:9000"}),
+        widget=forms.URLInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "http://192.168.110.117:8080",
+            }
+        ),
     )
 
-    graylog_api_token = forms.CharField(
-        label="API Token",
-        help_text="Graylog API token for authentication",
+    loki_tenant = forms.CharField(
+        label="Loki Tenant",
+        help_text="Value for X-Scope-OrgID header",
         required=True,
-        widget=forms.PasswordInput(
-            attrs={"class": "form-control", "placeholder": "Enter API token"},
-            render_value=True,
+        initial="docker",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "docker",
+            }
+        ),
+    )
+
+    loki_job = forms.CharField(
+        label="Loki Job Label",
+        help_text='Loki job label, for example: syslog',
+        required=True,
+        initial="syslog",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "syslog",
+            }
+        ),
+    )
+
+    routerboard_label = forms.CharField(
+        label="Routerboard Label",
+        help_text='Loki label used for device name, for example: routerboard',
+        required=True,
+        initial="routerboard",
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "routerboard",
+            }
         ),
     )
 
@@ -29,7 +63,7 @@ class GraylogSettingsForm(forms.Form):
         label="Log Limit",
         help_text="Maximum number of logs to display per request",
         required=False,
-        initial=50,
+        initial=100,
         min_value=10,
         max_value=500,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
@@ -46,13 +80,13 @@ class GraylogSettingsForm(forms.Form):
             (86400, "24 hours"),
             (604800, "7 days"),
         ],
-        initial=3600,
+        initial=86400,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
 
     timeout = forms.IntegerField(
         label="API Timeout",
-        help_text="Timeout for Graylog API requests (seconds)",
+        help_text="Timeout for Loki API requests (seconds)",
         required=False,
         initial=10,
         min_value=5,
@@ -68,31 +102,4 @@ class GraylogSettingsForm(forms.Form):
         min_value=0,
         max_value=300,
         widget=forms.NumberInput(attrs={"class": "form-control"}),
-    )
-
-    search_field = forms.ChoiceField(
-        label="Search Field",
-        help_text="Graylog field to search for device name",
-        choices=[
-            ("source", "source (hostname)"),
-            ("gl2_remote_ip", "gl2_remote_ip (IP address)"),
-        ],
-        initial="source",
-        widget=forms.Select(attrs={"class": "form-control"}),
-    )
-
-    use_fqdn = forms.BooleanField(
-        label="Use FQDN",
-        help_text="Use fully qualified domain name for searches",
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
-    )
-
-    fallback_to_ip = forms.BooleanField(
-        label="Fallback to IP",
-        help_text="Try searching by primary IP if hostname search fails",
-        required=False,
-        initial=True,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )

@@ -45,7 +45,9 @@ class DeviceGraylogLogsView(generic.ObjectView):
 
     def get(self, request, pk):
         """Render initial tab with loading spinner - content loads via htmx."""
+        logger.error(f"HTMX DEVICE REQUEST pk={pk}")
         device = Device.objects.get(pk=pk)
+        logger.error(f"DEVICE={device.name}")
 
         # Pass time_range for htmx URL construction
         time_range = request.GET.get("range", "")
@@ -84,11 +86,8 @@ class DeviceGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View
         config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
 
         if time_range:
-            # Build query with wildcard (Graylog wildcards are case-insensitive)
-            # Use VC name for virtual chassis members (original hostname)
             hostname = device.virtual_chassis.name if device.virtual_chassis else device.name
-            query = f"source:{hostname}*"
-            logs_data = client.search_logs(query, time_range=time_range)
+            logs_data = client.search_logs(hostname)
             logs_data["search_type"] = "hostname"
         else:
             logs_data = client.get_logs_for_device(device)
@@ -183,8 +182,7 @@ class VMGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
         if time_range:
             # Build query with wildcard (Graylog wildcards are case-insensitive)
             hostname = vm.name
-            query = f"source:{hostname}*"
-            logs_data = client.search_logs(query, time_range=time_range)
+            logs_data = client.search_logs(hostname)
             logs_data["search_type"] = "hostname"
         else:
             logs_data = client.get_logs_for_vm(vm)
