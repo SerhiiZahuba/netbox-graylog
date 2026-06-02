@@ -74,14 +74,14 @@ class GraylogClient:
         }
 
         response = requests.post(
-        endpoint,
-        json=body,
-        headers={
+            endpoint,
+            json=body,
+            headers={
             "Content-Type": "application/json"
         },
-        auth=self._get_auth(),
-        timeout=self.timeout,
-        verify=False,
+            auth=self._get_auth(),
+            timeout=self.timeout,
+            verify=False,
         )
 
         logger.error(response.text)
@@ -97,9 +97,9 @@ class GraylogClient:
             "time_range": time_range,
         }
 
-    cache.set(cache_key, result, self.cache_timeout)
+        cache.set(cache_key, result, self.cache_timeout)
 
-    return result
+        return result
 
         except requests.exceptions.Timeout:
             logger.error(f"Timeout connecting to Graylog: {self.base_url}")
