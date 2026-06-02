@@ -1,5 +1,9 @@
 # NetBox Loki Logs Plugin
 
+
+This is a fork from https://github.com/sieteunoseis/netbox-graylog
+
+
 <img src="docs/icon.png" alt="NetBox Loki Logs Plugin" width="100" align="right">
 
 A NetBox plugin that displays recent Loki logs on Device, VirtualMachine, and optional Endpoint detail pages.
