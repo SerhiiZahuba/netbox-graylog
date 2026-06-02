@@ -64,32 +64,31 @@ class GraylogClient:
             return cached
 
         endpoint = f"{self.base_url}/wazuh-alerts-*/_search"
+    body = {
+    "size": 1,
+    "query": {
+        "match_all": {}
+    }
+}
 
-        params = {
-            "query": query,
-            "range": time_range,
-            "limit": limit,
-            "sort": "timestamp:desc",
-        }
+    response = requests.post(
+    endpoint,
+    json=body,
+    headers={
+        "Content-Type": "application/json"
+    },
+    auth=self._get_auth(),
+    timeout=self.timeout,
+        verify=False,
+    )
 
-        if fields:
-            params["fields"] = ",".join(fields)
+    logger.error(response.text)
 
-        try:
-            response = requests.post(
-                endpoint,
-                params=params,
-                headers=self._get_headers(),
-                auth=self._get_auth(),
-                timeout=self.timeout,
-                verify=False,  # Allow self-signed certs
-            )
-            response.raise_for_status()
-
+    response.raise_for_status()
             data = response.json()
             result = {
-                "messages": data.get("messages", []),
-                "total_results": data.get("total_results", 0),
+                "messages": data["hits"]["hits"],
+                "total_results": data["hits"]["total"]["value"],
                 "time": data.get("time", 0),
                 "query": query,
                 "time_range": time_range,
