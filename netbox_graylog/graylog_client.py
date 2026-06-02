@@ -64,40 +64,42 @@ class GraylogClient:
             return cached
 
         endpoint = f"{self.base_url}/wazuh-alerts-*/_search"
+
+    try:
     body = {
-    "size": 1,
-    "query": {
-        "match_all": {}
+        "size": limit,
+        "query": {
+            "match_all": {}
+        }
     }
-}
 
     response = requests.post(
-    endpoint,
-    json=body,
-    headers={
-        "Content-Type": "application/json"
-    },
-    auth=self._get_auth(),
-    timeout=self.timeout,
+        endpoint,
+        json=body,
+        headers={
+            "Content-Type": "application/json"
+        },
+        auth=self._get_auth(),
+        timeout=self.timeout,
         verify=False,
     )
 
     logger.error(response.text)
 
     response.raise_for_status()
-            data = response.json()
-            result = {
-                "messages": data["hits"]["hits"],
-                "total_results": data["hits"]["total"]["value"],
-                "time": data.get("time", 0),
-                "query": query,
-                "time_range": time_range,
-            }
 
-            # Cache the results
-            cache.set(cache_key, result, self.cache_timeout)
+    data = response.json()
 
-            return result
+    result = {
+        "messages": data["hits"]["hits"],
+        "total_results": data["hits"]["total"]["value"],
+        "query": query,
+        "time_range": time_range,
+    }
+
+    cache.set(cache_key, result, self.cache_timeout)
+
+    return result
 
         except requests.exceptions.Timeout:
             logger.error(f"Timeout connecting to Graylog: {self.base_url}")
