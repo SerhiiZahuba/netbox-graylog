@@ -1,7 +1,7 @@
 # NetBox Loki Logs Plugin
 
 
-This is a fork from https://github.com/sieteunoseis/netbox-graylog
+Fork from https://github.com/sieteunoseis/netbox-graylog
 
 
 <img src="docs/icon.png" alt="NetBox Loki Logs Plugin" width="100" align="right">
@@ -40,7 +40,7 @@ This fork replaces the unfinished Graylog integration with a Loki-based implemen
 ## Installation
 
 ```bash
-git clone https://github.com/SerhiiZahuba/netbox-graylog.git
+git clone https://github.com/SerhiiZahuba/netbox-loki.git
 cd netbox-graylog
 pip install -e .
 ```
@@ -51,11 +51,11 @@ Add the plugin to NetBox:
 
 ```python
 PLUGINS = [
-    "netbox_graylog",
+    "netbox_loki",
 ]
 
 PLUGINS_CONFIG = {
-    "netbox_graylog": {
+    "netbox_loki": {
         "loki_url": "http://loki:3100",
         "loki_external_url": "https://grafana.example.com/explore",
         "loki_tenant": "loki_tenant",
