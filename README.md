@@ -34,10 +34,16 @@ This fork replaces the unfinished Graylog integration with a Loki-based implemen
 ## Requirements
 
 - NetBox 4.0 or higher
-- Python 3.10+
+- Python 3.11+
 - Grafana Loki reachable from the NetBox instance
 
 ## Installation
+
+```
+source /opt/netbox/venv/bin/activate
+pip install netbox-loki
+```
+or for dev
 
 ```bash
 git clone https://github.com/SerhiiZahuba/netbox-loki.git
