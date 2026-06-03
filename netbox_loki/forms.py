@@ -68,7 +68,7 @@ class LokiSettingsForm(forms.Form):
 
     loki_job = forms.CharField(
         label="Job Label Value",
-        help_text='Optional value for the standard Loki label `job`, for example: `syslog`.',
+        help_text="Optional value for the standard Loki label `job`, for example: `syslog`.",
         required=False,
         initial="syslog",
         widget=forms.TextInput(
@@ -81,7 +81,7 @@ class LokiSettingsForm(forms.Form):
 
     device_label = forms.CharField(
         label="Device Label",
-        help_text='Loki label that stores the device or VM name, for example: `routerboard`, `host`, or `hostname`.',
+        help_text="Loki label that stores the device or VM name, for example: `routerboard`, `host`, or `hostname`.",
         required=True,
         initial="routerboard",
         widget=forms.TextInput(
