@@ -4,7 +4,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("netbox_graylog", "0001_initial"),
+        ("netbox_loki", "0001_initial"),
     ]
 
     operations = [

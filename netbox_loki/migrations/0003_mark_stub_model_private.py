@@ -1,6 +1,6 @@
-"""Mark the unmanaged Graylog permission-anchor model as private.
+"""Mark the unmanaged Loki permission-anchor model as private.
 
-The model exists only to attach the `configure_graylog` permission and has
+The model exists only to attach the `configure_loki` permission and has
 no DB table. NetBox 4.5's /core/system/ view runs `Model.objects.count()` for
 every public ObjectType, which crashes on the missing table. Flipping
 `ObjectType.public = False` (matching the `_netbox_private = True` flag now
@@ -13,7 +13,7 @@ from django.db import migrations
 def mark_stub_model_private(apps, schema_editor):
     ContentType = apps.get_model("contenttypes", "ContentType")
     try:
-        ct = ContentType.objects.get(app_label="netbox_graylog", model="graylog")
+        ct = ContentType.objects.get(app_label="netbox_loki", model="loki")
     except ContentType.DoesNotExist:
         return
     with schema_editor.connection.cursor() as cursor:
@@ -26,7 +26,7 @@ def mark_stub_model_private(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("netbox_graylog", "0002_rename_model"),
+        ("netbox_loki", "0002_rename_model"),
     ]
 
     operations = [
