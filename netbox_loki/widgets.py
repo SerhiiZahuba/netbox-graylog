@@ -19,7 +19,7 @@ class LokiSummaryWidget(DashboardWidget):
 
     default_title = _("Loki Summary")
     description = _("Display log volume and error counts from Loki.")
-    template_name = "netbox_Loki/widgets/loki_summary.html"
+    template_name = "netbox_loki/widgets/loki_summary.html"
     width = 4
     height = 3
 
