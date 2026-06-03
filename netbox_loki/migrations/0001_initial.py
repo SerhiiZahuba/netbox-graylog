@@ -9,12 +9,12 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="GraylogPermission",
+            name="LokiPermission",
             fields=[],
             options={
                 "managed": False,
                 "default_permissions": (),
-                "permissions": (("configure_graylog", "Can configure Graylog plugin settings"),),
+                "permissions": (("configure_loki", "Can configure Loki plugin settings"),),
             },
         ),
     ]
