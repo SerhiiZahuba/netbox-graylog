@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RenameModel(
-            old_name="GraylogPermission",
-            new_name="Graylog",
+            old_name="LokiPermission",
+            new_name="Loki",
         ),
     ]
