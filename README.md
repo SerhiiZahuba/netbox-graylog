@@ -58,7 +58,7 @@ PLUGINS_CONFIG = {
     "netbox_graylog": {
         "loki_url": "http://loki:3100",
         "loki_external_url": "https://grafana.example.com/explore",
-        "loki_tenant": "",
+        "loki_tenant": "loki_tenant",
         "loki_username": "",
         "loki_password": "",
         "loki_bearer_token": "",
