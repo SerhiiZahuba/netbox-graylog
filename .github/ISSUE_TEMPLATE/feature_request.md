@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea for netbox-graylog
+about: Suggest an idea for netbox-loki
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''

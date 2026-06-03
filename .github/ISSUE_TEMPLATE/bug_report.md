@@ -12,8 +12,8 @@ A clear and concise description of what the bug is.
 ## Environment
 - NetBox version:
 - Python version:
-- netbox-graylog version:
-- Graylog version:
+- netbox-loki version:
+- Loki version:
 
 ## Steps to Reproduce
 1. Go to '...'
