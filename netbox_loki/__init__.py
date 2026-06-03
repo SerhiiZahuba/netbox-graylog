@@ -13,16 +13,16 @@ __version__ = "1.2.0"
 logger = logging.getLogger(__name__)
 
 
-class GraylogConfig(PluginConfig):
+class LokiConfig(PluginConfig):
     """Plugin configuration for NetBox Loki integration."""
 
-    name = "netbox_graylog"
+    name = "netbox_loki"
     verbose_name = "NetBox Loki Logs"
     description = "Display recent Loki logs in device, VM, and endpoint detail pages"
     version = __version__
-    author = "Jeremy Worden"
-    author_email = "jeremy.worden@gmail.com"
-    base_url = "graylog"
+    author = "-----"
+    author_email = "---@gmail.com"
+    base_url = "loki"
     min_version = "4.0.0"
     max_version = "5.99"
 
@@ -78,12 +78,12 @@ class GraylogConfig(PluginConfig):
             from netbox_endpoints.models import Endpoint
             from utilities.views import ViewTab, register_model_view
 
-            @register_model_view(Endpoint, name="graylog_logs", path="logs")
-            class EndpointGraylogLogsView(generic.ObjectView):
+            @register_model_view(Endpoint, name="loki_logs", path="logs")
+            class EndpointLokiLogsView(generic.ObjectView):
                 """Display Loki logs for an Endpoint with async loading."""
 
                 queryset = Endpoint.objects.all()
-                template_name = "netbox_graylog/endpoint_logs_tab.html"
+                template_name = "netbox_loki/endpoint_logs_tab.html"
 
                 tab = ViewTab(
                     label="Loki",
@@ -113,4 +113,4 @@ class GraylogConfig(PluginConfig):
             logger.warning(f"Could not register endpoint views: {e}")
 
 
-config = GraylogConfig
+config = LokiConfig

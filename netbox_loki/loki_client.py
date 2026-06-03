@@ -35,16 +35,16 @@ class LokiClient:
     """Client for querying Grafana Loki."""
 
     def __init__(self) -> None:
-        self.config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
+        self.config = settings.PLUGINS_CONFIG.get("netbox_loki", {})
         self.base_url = _read_netbox_setting(
             self.config,
             "loki_url",
-            ("NETBOX_GRAYLOG_LOKI_URL", "LOKI_URL"),
+            ("NETBOX_LOKI_LOKI_URL", "LOKI_URL"),
             "http://localhost:3100",
         ).rstrip("/")
-        self.timeout = _read_netbox_setting(self.config, "timeout", ("NETBOX_GRAYLOG_TIMEOUT",), 10)
-        self.cache_timeout = _read_netbox_setting(self.config, "cache_timeout", ("NETBOX_GRAYLOG_CACHE_TIMEOUT",), 60)
-        self.verify_tls = _read_netbox_setting(self.config, "verify_tls", ("NETBOX_GRAYLOG_VERIFY_TLS",), True)
+        self.timeout = _read_netbox_setting(self.config, "timeout", ("NETBOX_LOKI_TIMEOUT",), 10)
+        self.cache_timeout = _read_netbox_setting(self.config, "cache_timeout", ("NETBOX_LOKI_CACHE_TIMEOUT",), 60)
+        self.verify_tls = _read_netbox_setting(self.config, "verify_tls", ("NETBOX_LOKI_VERIFY_TLS",), True)
 
     def _get_headers(self) -> dict[str, str]:
         headers = {
@@ -55,7 +55,7 @@ class LokiClient:
             _read_netbox_setting(
                 self.config,
                 "loki_tenant",
-                ("NETBOX_GRAYLOG_LOKI_TENANT", "LOKI_TENANT", "LOKI_X_SCOPE_ORGID"),
+                ("NETBOX_LOKI_TENANT", "LOKI_TENANT", "LOKI_X_SCOPE_ORGID"),
                 "docker",
             )
         ).strip()
@@ -63,7 +63,7 @@ class LokiClient:
             _read_netbox_setting(
                 self.config,
                 "loki_bearer_token",
-                ("NETBOX_GRAYLOG_LOKI_BEARER_TOKEN", "LOKI_BEARER_TOKEN"),
+                ("NETBOX_LOKI_BEARER_TOKEN", "LOKI_BEARER_TOKEN"),
                 "",
             )
         ).strip()
@@ -78,14 +78,14 @@ class LokiClient:
             _read_netbox_setting(
                 self.config,
                 "loki_username",
-                ("NETBOX_GRAYLOG_LOKI_USERNAME", "LOKI_USERNAME"),
+                ("NETBOX_LOKI_USERNAME", "LOKI_USERNAME"),
                 "",
             )
         ).strip()
         password = _read_netbox_setting(
             self.config,
             "loki_password",
-            ("NETBOX_GRAYLOG_LOKI_PASSWORD", "LOKI_PASSWORD"),
+            ("NETBOX_LOKI_PASSWORD", "LOKI_PASSWORD"),
             "",
         )
         if username:
@@ -364,7 +364,7 @@ class LokiClient:
         return summary
 
 
-GraylogClient = LokiClient
+LokiClient = LokiClient
 
 _client: LokiClient | None = None
 

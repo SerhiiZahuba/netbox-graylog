@@ -3,14 +3,14 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "netbox-graylog"
-version = "1.2.0"
+name = "netbox-loki"
+version = "0.0.1"
 description = "NetBox plugin to display Loki logs in device, VM, and endpoint detail pages"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
 authors = [
-    {name = "sieteunoseis", email = "jeremy.worden@gmail.com"}
+    {name = "sieteunoseis", email = "--@gmail.com"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -28,11 +28,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/SerhiiZahuba/netbox-graylog"
-Repository = "https://github.com/SerhiiZahuba/netbox-graylog"
-Issues = "https://github.com/SerhiiZahuba/netbox-graylog/issues"
-Documentation = "https://github.com/SerhiiZahuba/netbox-graylog"
-Changelog = "https://github.com/SerhiiZahuba/netbox-graylog/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/SerhiiZahuba/netbox-loki"
+Repository = "https://github.com/SerhiiZahuba/netbox-loki"
+Issues = "https://github.com/SerhiiZahuba/netbox-loki/issues"
+Documentation = "https://github.com/SerhiiZahuba/netbox-loki"
+Changelog = "https://github.com/SerhiiZahuba/netbox-loki/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -43,10 +43,10 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["netbox_graylog*"]
+include = ["netbox_loki*"]
 
 [tool.setuptools.package-data]
-netbox_graylog = ["templates/**/*.html"]
+netbox_loki = ["templates/**/*.html"]
 
 [tool.black]
 line-length = 120

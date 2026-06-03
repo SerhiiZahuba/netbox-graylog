@@ -8,18 +8,18 @@ from django.utils.translation import gettext as _
 from extras.dashboard.utils import register_widget
 from extras.dashboard.widgets import DashboardWidget, WidgetConfigForm
 
-from .graylog_client import get_client
+from .loki_client import get_client
 
 logger = logging.getLogger(__name__)
 
 
 @register_widget
-class GraylogSummaryWidget(DashboardWidget):
+class LokiSummaryWidget(DashboardWidget):
     """Dashboard widget showing log volume and error counts from Loki."""
 
     default_title = _("Loki Summary")
     description = _("Display log volume and error counts from Loki.")
-    template_name = "netbox_graylog/widgets/graylog_summary.html"
+    template_name = "netbox_Loki/widgets/loki_summary.html"
     width = 4
     height = 3
 

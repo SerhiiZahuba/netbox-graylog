@@ -22,8 +22,8 @@ from netbox.views import generic
 from utilities.views import ViewTab, register_model_view
 from virtualization.models import VirtualMachine
 
-from .forms import GraylogSettingsForm
-from .graylog_client import get_client
+from .forms import LokiSettingsForm
+from .loki_client import get_client
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def _parse_time_range(raw_value: str | None) -> int | None:
 
 
 def _external_log_url() -> str:
-    config = settings.PLUGINS_CONFIG.get("netbox_graylog", {})
+    config = settings.PLUGINS_CONFIG.get("netbox_loki", {})
     return (config.get("loki_external_url") or config.get("loki_url") or "").rstrip("/")
 
 
@@ -58,7 +58,7 @@ def _render_log_response(
 ) -> HttpResponse:
     return HttpResponse(
         render_to_string(
-            "netbox_graylog/logs_tab_content.html",
+            "netbox_loki/logs_tab_content.html",
             {
                 "object": obj,
                 "logs": logs_data.get("messages", []),
@@ -74,12 +74,12 @@ def _render_log_response(
     )
 
 
-@register_model_view(Device, name="graylog_logs", path="logs")
-class DeviceGraylogLogsView(generic.ObjectView):
+@register_model_view(Device, name="loki_logs", path="logs")
+class DeviceLokiLogsView(generic.ObjectView):
     """Display Loki logs for a Device with async loading."""
 
     queryset = Device.objects.all()
-    template_name = "netbox_graylog/device_logs_tab.html"
+    template_name = "netbox_loki/device_logs_tab.html"
 
     tab = ViewTab(
         label="Loki",
@@ -104,7 +104,7 @@ class DeviceGraylogLogsView(generic.ObjectView):
         )
 
 
-class DeviceGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
+class DeviceLokiContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """HTMX endpoint that returns Loki content for async loading."""
 
     permission_required = "dcim.view_device"
@@ -116,12 +116,12 @@ class DeviceGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View
         return _render_log_response(request, obj=device, logs_data=logs_data)
 
 
-@register_model_view(VirtualMachine, name="graylog_logs", path="logs")
-class VirtualMachineGraylogLogsView(generic.ObjectView):
+@register_model_view(VirtualMachine, name="loki_logs", path="logs")
+class VirtualMachineLokiLogsView(generic.ObjectView):
     """Display Loki logs for a VirtualMachine with async loading."""
 
     queryset = VirtualMachine.objects.all()
-    template_name = "netbox_graylog/vm_logs_tab.html"
+    template_name = "netbox_loki/vm_logs_tab.html"
 
     tab = ViewTab(
         label="Loki",
@@ -146,7 +146,7 @@ class VirtualMachineGraylogLogsView(generic.ObjectView):
         )
 
 
-class VMGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
+class VMLokiContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """HTMX endpoint that returns Loki content for VM async loading."""
 
     permission_required = "virtualization.view_virtualmachine"
@@ -158,21 +158,21 @@ class VMGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
         return _render_log_response(request, obj=vm, logs_data=logs_data)
 
 
-class GraylogSettingsView(LoginRequiredMixin, PermissionRequiredMixin, View):
+class LokiSettingsView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """Read-only view for displaying Loki plugin settings."""
 
-    permission_required = "netbox_graylog.configure_graylog"
-    template_name = "netbox_graylog/settings.html"
+    permission_required = "netbox_loki.configure_loki"
+    template_name = "netbox_loki/settings.html"
 
     def get_current_config(self) -> dict[str, Any]:
-        return settings.PLUGINS_CONFIG.get("netbox_graylog", {})
+        return settings.PLUGINS_CONFIG.get("netbox_loki", {})
 
     def get(self, request):
-        form = GraylogSettingsForm(initial=self.get_current_config())
+        form = LokiSettingsForm(initial=self.get_current_config())
         return render(request, self.template_name, {"form": form, "config": self.get_current_config()})
 
     def post(self, request):
-        form = GraylogSettingsForm(request.POST)
+        form = LokiSettingsForm(request.POST)
         if form.is_valid():
             messages.warning(
                 request,
@@ -202,7 +202,7 @@ class TestConnectionView(View):
 
 if ENDPOINTS_PLUGIN_INSTALLED:
 
-    class EndpointGraylogContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    class EndpointLokiContentView(LoginRequiredMixin, PermissionRequiredMixin, View):
         """HTMX endpoint that returns Loki content for endpoint async loading."""
 
         permission_required = "netbox_endpoints.view_endpoint"

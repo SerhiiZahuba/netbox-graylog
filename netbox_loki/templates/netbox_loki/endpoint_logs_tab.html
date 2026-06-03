@@ -3,8 +3,8 @@
 
 {% block content %}
 {% if loading %}
-<div id="graylog-content"
-     hx-get="{% url 'plugins:netbox_graylog:endpoint_content' pk=object.pk %}{% if time_range_param %}?range={{ time_range_param }}{% endif %}"
+<div id="loki-content"
+     hx-get="{% url 'plugins:netbox_loki:endpoint_content' pk=object.pk %}{% if time_range_param %}?range={{ time_range_param }}{% endif %}"
      hx-trigger="load"
      hx-swap="innerHTML">
     <div class="d-flex justify-content-center align-items-center py-5">

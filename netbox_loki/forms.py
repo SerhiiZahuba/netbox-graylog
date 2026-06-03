@@ -5,7 +5,7 @@ Forms for NetBox Loki plugin settings.
 from django import forms
 
 
-class GraylogSettingsForm(forms.Form):
+class LokiSettingsForm(forms.Form):
     """Form for displaying Loki plugin settings."""
 
     loki_url = forms.URLField(

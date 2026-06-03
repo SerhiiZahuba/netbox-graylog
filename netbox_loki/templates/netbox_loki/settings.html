@@ -165,10 +165,10 @@
             </div>
             <div class="card-body">
                 <p>Add to <code>configuration.py</code> or <code>plugins.py</code>:</p>
-                <pre class="bg-body-secondary p-2 rounded" style="font-size: 0.8rem;"><code>PLUGINS = ['netbox_graylog']
+                <pre class="bg-body-secondary p-2 rounded" style="font-size: 0.8rem;"><code>PLUGINS = ['netbox_loki']
 
 PLUGINS_CONFIG = {
-    'netbox_graylog': {
+    'netbox_loki': {
         'loki_url': 'http://loki:3100',
         'loki_external_url': 'https://grafana.example.com/explore',
         'loki_tenant': 'docker',
@@ -195,7 +195,7 @@ PLUGINS_CONFIG = {
         btn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Testing...';
         resultDiv.style.display = 'none';
 
-        fetch('{% url "plugins:netbox_graylog:test_connection" %}', {
+        fetch('{% url "plugins:netbox_loki:test_connection" %}', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',

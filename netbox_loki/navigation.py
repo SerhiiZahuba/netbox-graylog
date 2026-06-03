@@ -11,9 +11,9 @@ menu = PluginMenu(
             "Settings",
             (
                 PluginMenuItem(
-                    link="plugins:netbox_graylog:settings",
+                    link="plugins:netbox_loki:settings",
                     link_text="Configuration",
-                    permissions=["netbox_graylog.configure_graylog"],
+                    permissions=["netbox_loki.configure_loki"],
                 ),
             ),
         ),
